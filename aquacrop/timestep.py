@@ -10,7 +10,8 @@ import numpy as np
 import pandas as pd
 
 # Cell
-def solution(InitCond,ParamStruct,ClockStruct,weather_step,Outputs):
+# - CC UPDATE: CHANGED
+def solution(InitCond,ParamStruct,ClockStruct,weather_step,Outputs, canopy_step=np.nan):
     """
     Function to perform AquaCrop-OS solution for a single time step
 
@@ -165,10 +166,9 @@ def solution(InitCond,ParamStruct,ClockStruct,weather_step,Outputs):
     # 10. Update growth stage
     NewCond = growth_stage(Crop,NewCond,GrowingSeason)
 
-
+    # - CC UPDATE: CHANGED
     # 11. Canopy cover development
-    NewCond = canopy_cover(Crop,Soil.Profile,Soil.zTop,NewCond,GDD,Et0,GrowingSeason)
-
+    NewCond = canopy_cover(Crop,Soil.Profile,Soil.zTop,NewCond,GDD,Et0,GrowingSeason, canopy_step)
 
     # 12. Soil evaporation
     NewCond,Es,EsPot = soil_evaporation(ClockStruct.EvapTimeSteps,ClockStruct.SimOffSeason,ClockStruct.TimeStepCounter,

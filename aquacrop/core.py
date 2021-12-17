@@ -91,7 +91,9 @@ class AquaCropModel:
     def __init__(self,SimStartTime,SimEndTime,wdf,Soil,Crop,InitWC,
                      IrrMngt=None,FieldMngt=None,FallowFieldMngt=None,
                      Groundwater=None,planting_dates=None,
-                     harvest_dates=None,CO2conc=None):
+                     harvest_dates=None,CO2conc=None,
+                     # - CC UPDATE: ADDED
+                     cc_df=None):
 
         self.SimStartTime = SimStartTime
         self.SimEndTime = SimEndTime
@@ -107,6 +109,8 @@ class AquaCropModel:
         self.FieldMngt = FieldMngt
         self.FallowFieldMngt = FallowFieldMngt
         self.Groundwater = Groundwater
+        # - CC UPDATE: ADDED
+        self.cc_df = cc_df
 
         if IrrMngt == None:  self.IrrMngt = IrrMngtClass(IrrMethod=0);
         if FieldMngt == None:  self.FieldMngt = FieldMngtClass();
@@ -129,6 +133,10 @@ class AquaCropModel:
 
         # get weather data
         self.weather_df = read_weather_inputs(self.ClockStruct,self.wdf)
+
+        # - CC UPDATE: ADDED
+        # get canopy cover data
+        self.canopy_df = read_canopy_inputs(self.ClockStruct, self.cc_df)
 
         # read model params
         self.ClockStruct, self.ParamStruct = read_model_parameters(self.ClockStruct,self.Soil,
@@ -168,6 +176,10 @@ class AquaCropModel:
          # save model weather to InitCond
         self.weather = self.weather_df.values
 
+        # - CC UPDATE: ADDED (in caso di None potrei tornare un DataFrame vuoto??)
+        # save model canopy cover to InitCond
+        self.canopy = self.canopy_df['CC'].values if self.canopy_df is not None else None
+
         #return self.ClockStruct,self.InitCond,self.Outputs
         return
 
@@ -203,8 +215,15 @@ class AquaCropModel:
         #weather_step = weather_df[weather_df.Date==ClockStruct.StepStartTime]
         weather_step = self.weather[self.ClockStruct.TimeStepCounter]
 
+        # - CC UPDATE: ADDED
+        # extract canopy cover data for current timestep
+        canopy_step = self.canopy[self.ClockStruct.TimeStepCounter] if self.canopy is not None else np.nan
+
+
         #%% Get model solution %%
-        NewCond,ParamStruct,Outputs = solution(self.InitCond,self.ParamStruct,self.ClockStruct,weather_step,self.Outputs)
+        NewCond,ParamStruct,Outputs = solution(self.InitCond,self.ParamStruct,self.ClockStruct,weather_step,self.Outputs,
+                                              # - CC UPDATE: ADDED
+                                               canopy_step)
 
         #%% Check model termination %%
         ClockStruct = check_model_termination(self.ClockStruct,NewCond)
